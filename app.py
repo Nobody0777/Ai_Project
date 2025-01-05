@@ -155,8 +155,8 @@ h1, h2, h3 {
         """
         **Contributors**:
         - Muhammad Areeb
-        - Qasim Tahir
-        - Hashaam Amjad
+        - Muhammad Qasim Tahir
+        - Muhammad Hashaam Amjad
         """
     )
 

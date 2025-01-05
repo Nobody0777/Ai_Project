@@ -1,145 +1,165 @@
 import pandas as pd
 import numpy as np
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler, PolynomialFeatures
-from sklearn.linear_model import LinearRegression, Ridge
-from sklearn.metrics import mean_squared_error, r2_score
 import matplotlib.pyplot as plt
 import seaborn as sns
 import streamlit as st
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
 
 def main():
-    st.set_page_config(page_title="Global Inflation Rate Prediction", layout="wide")
-    st.title("🌍 Global Inflation Rate Prediction Tool")
-
-
+    # Custom CSS for background and fonts
     st.markdown(
         """
         <style>
-        .main-header {background-color: #f0f0f5; padding: 10px; border-radius: 5px;}
-        .sidebar {background-color: #f8f9fa; padding: 15px; border-radius: 5px;}
+        body {
+            background-color: #f5f5f5;
+            color: #333;
+            font-family: 'Arial', sans-serif;
+        }
+        .stApp {
+            background: linear-gradient(135deg, #ffffff 20%, #e6e6e6 80%);
+            padding: 20px;
+            border-radius: 10px;
+        }
+        .sidebar .sidebar-content {
+            background-color: #333;
+            color: white;
+        }
+        h1, h2, h3 {
+            color: #004080;
+        }
+        .stButton>button {
+            background-color: #004080;
+            color: white;
+            border-radius: 5px;
+            border: none;
+        }
         </style>
-        <div class="main-header">
-        <h2>Predict Future Inflation Rates with Advanced Machine Learning</h2>
-        <p>Upload your dataset, explore insights, and get predictions tailored for your selected country.</p>
-        </div>
         """,
-        unsafe_allow_html=True
+        unsafe_allow_html=True,
     )
 
-    st.sidebar.markdown(
+    # Main header
+    st.title("🌍 Global Inflation Rate Prediction Tool")
+    st.markdown(
         """
-        <div class="sidebar">
-        <h3>Welcome!</h3>
-        Please provide your details and upload the dataset.
-        </div>
-        """,
-        unsafe_allow_html=True
+        Welcome to the **Global Inflation Rate Prediction Tool**! 
+        This app allows you to upload historical inflation data, explore trends, and predict future rates.
+        """
     )
 
-    st.sidebar.subheader("User Information")
-    user_name = st.sidebar.text_input("Enter your name:")
-    user_email = st.sidebar.text_input("Enter your email:")
+    # Sidebar user information
+    with st.sidebar:
+        st.subheader("🧍 User Information")
+        user_name = st.text_input("Enter your name:")
+        user_age = st.number_input("Enter your age:", min_value=1, step=1)
+        user_email = st.text_input("Enter your email:")
 
-    if user_name and user_email:
-        st.sidebar.success(f"Welcome, {user_name}!")
+        if user_name and user_email:
+            st.success(f"Welcome, {user_name}!")
 
-    uploaded_file = st.file_uploader("Upload your inflation dataset (CSV format):", type="csv")
+        st.markdown("---")
+        st.subheader("📚 About the Tool")
+        st.markdown(
+            """
+            This tool uses **machine learning** to analyze inflation data and make future predictions. 
+            Powered by **Linear Regression**.
+            """
+        )
+        st.markdown("---")
+
+    # File upload
+    st.markdown("### 📂 Upload Your Dataset")
+    uploaded_file = st.file_uploader("Upload a CSV file containing inflation data:", type="csv")
 
     if uploaded_file:
-        data = pd.read_csv(uploaded_file)
-        data = data.replace(r'^\s*$', np.nan, regex=True).fillna(0)
+        try:
+            # Load data
+            data = pd.read_csv(uploaded_file)
 
-        st.subheader("Dataset Overview")
-        st.write("Below is a preview of your dataset:")
-        st.dataframe(data.head(10))
+            # Data cleaning
+            data.columns = [col.strip() for col in data.columns]  # Remove whitespace from column names
+            data = data.replace(r"^\s*$", np.nan, regex=True)  # Replace empty strings with NaN
+            data.dropna(inplace=True)  # Drop rows with NaN values
 
-        if 'country_name' in data.columns and 'indicator_name' in data.columns:
-            country = st.selectbox("Select a country for prediction:", data['country_name'].unique())
-            country_data = data[data['country_name'] == country]
+            # Ensure proper data types
+            data['Year'] = pd.to_numeric(data['Year'], errors='coerce')
+            data['Inflation Rate'] = pd.to_numeric(data['Inflation Rate'], errors='coerce')
+            data.dropna(inplace=True)
 
-            try:
-                country_data = country_data.drop('indicator_name', axis=1).set_index('country_name').transpose().reset_index()
-                country_data.columns = ['Year', 'Inflation Rate (%)']
-                country_data['Year'] = country_data['Year'].astype(int)
-                country_data['Inflation Rate (%)'] = country_data['Inflation Rate (%)'].astype(float)
+            st.markdown("### 📊 Data Overview")
+            st.write(data.head(10))
 
-                st.subheader(f"Historical Data for {country}")
-                st.write(country_data)
+            # Ensure columns exist for proper processing
+            if 'Year' in data.columns and 'Inflation Rate' in data.columns:
+                st.markdown("### 📈 Data Visualization")
+                fig, ax = plt.subplots()
+                sns.lineplot(data=data, x='Year', y='Inflation Rate', marker="o", ax=ax)
+                ax.set_title("Inflation Rate Over Time")
+                ax.set_xlabel("Year")
+                ax.set_ylabel("Inflation Rate (%)")
+                st.pyplot(fig)
 
-                X = country_data[['Year']]
-                y = country_data['Inflation Rate (%)']
+                # Predictive Analysis
+                st.markdown("### 🤖 Predictive Analysis")
+                X = data[['Year']]
+                y = data['Inflation Rate']
 
-                # Scaling and polynomial features
-                scaler = StandardScaler()
-                X_scaled = scaler.fit_transform(X)
-                poly = PolynomialFeatures(degree=2)
-                X_poly = poly.fit_transform(X_scaled)
+                # Train-test split
+                X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-                X_train, X_test, y_train, y_test = train_test_split(X_poly, y, test_size=0.2, random_state=42)
-
-                # Ridge Regression for better accuracy
-                model = Ridge(alpha=1.0)
+                # Linear Regression Model
+                model = LinearRegression()
                 model.fit(X_train, y_train)
+
+                # Predictions
                 y_pred = model.predict(X_test)
 
-                mse = mean_squared_error(y_test, y_pred)
-                r2 = r2_score(y_test, y_pred)
+                # Display predictions vs actual
+                result_df = pd.DataFrame({"Actual": y_test, "Predicted": y_pred})
+                st.write(result_df)
 
-                st.subheader("Model Evaluation")
-                st.write(f"Mean Squared Error (MSE): {mse:.2f}")
-                st.write(f"R-Squared (Accuracy): {r2:.2f}")
+                # R^2 score
+                st.write(f"Model Performance (R^2 Score): {model.score(X_test, y_test):.2f}")
 
-                st.markdown("### Predict Future Inflation Rates")
-                start_year = st.slider("Select start year:", 2024, 2050, 2024)
-                end_year = st.slider("Select end year:", 2025, 2055, 2025)
+                # Future Predictions
+                st.markdown("### 🔮 Future Predictions")
+                future_years = st.number_input("Enter the number of future years to predict:", min_value=1, step=1)
+                if future_years:
+                    last_year = data['Year'].max()
+                    future_X = pd.DataFrame({"Year": [last_year + i for i in range(1, future_years + 1)]})
+                    future_predictions = model.predict(future_X)
 
-                future_years = pd.DataFrame({'Year': range(start_year, end_year + 1)})
-                future_years_scaled = scaler.transform(future_years)
-                future_years_poly = poly.transform(future_years_scaled)
-                future_predictions = model.predict(future_years_poly)
+                    future_df = pd.DataFrame({"Year": future_X['Year'], "Predicted Inflation Rate": future_predictions})
+                    st.write(future_df)
 
-                predictions_df = pd.DataFrame({
-                    'Year': future_years['Year'],
-                    'Predicted Inflation Rate (%)': future_predictions
-                })
+                    # Plot future predictions
+                    fig, ax = plt.subplots()
+                    sns.lineplot(data=future_df, x='Year', y='Predicted Inflation Rate', marker="o", ax=ax, color="orange")
+                    ax.set_title("Future Inflation Rate Predictions")
+                    ax.set_xlabel("Year")
+                    ax.set_ylabel("Inflation Rate (%)")
+                    st.pyplot(fig)
 
-                st.subheader("Future Inflation Predictions")
-                st.write(predictions_df)
+            else:
+                st.error("The uploaded file must contain 'Year' and 'Inflation Rate' columns.")
 
-                st.subheader("Visualization")
-                plt.figure(figsize=(10, 6))
-                plt.plot(country_data['Year'], country_data['Inflation Rate (%)'], label='Historical Data', marker='o')
-                plt.plot(future_years['Year'], future_predictions, label='Predicted Data', linestyle='--')
-                plt.xlabel('Year')
-                plt.ylabel('Inflation Rate (%)')
-                plt.title(f'Inflation Rate Prediction for {country}')
-                plt.legend()
-                st.pyplot(plt)
-
-                st.download_button(
-                    label="Download Prediction Data",
-                    data=predictions_df.to_csv(index=False),
-                    file_name=f"{country}_inflation_predictions.csv",
-                    mime="text/csv"
-                )
-
-            except Exception as e:
-                st.error(f"Error processing data for {country}: {e}")
-
-        else:
-            st.error("Required columns ('country_name', 'indicator_name') are missing.")
-
+        except Exception as e:
+            st.error(f"Error processing the file: {e}")
     else:
-        st.warning("Please upload a CSV file to proceed.")
+        st.info("Please upload a CSV file to begin.")
 
+    st.markdown("---")
+    st.markdown("### 🤝 Collaborators")
     st.sidebar.markdown(
         """
-        **App Credits:**
-        - Developed by Areeb, Qasim, and Hashaam
-        - Powered by Streamlit
+        **Contributors**:
+        - Muhammad Areeb
+        - Qasim Tahir
+        - Hashaam Amjad
         """
     )
 
 if __name__ == "__main__":
     main()
+

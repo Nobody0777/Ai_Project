@@ -10,7 +10,8 @@ import streamlit as st
 
 def main():
     st.set_page_config(page_title="Global Inflation Rate Prediction", layout="wide")
-    st.title("\ud83c\udf0d Global Inflation Rate Prediction Tool")
+    st.title("🌍 Global Inflation Rate Prediction Tool")
+
 
     st.markdown(
         """

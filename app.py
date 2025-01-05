@@ -12,27 +12,27 @@ def main():
         """
         <style>
         body {
-            background-color: #f5f5f5;
-            color: #333;
-            font-family: 'Arial', sans-serif;
-        }
-        .stApp {
-            background: linear-gradient(135deg, #ffffff 20%, #e6e6e6 80%);
-            padding: 20px;
-            border-radius: 10px;
-        }
-        .sidebar .sidebar-content {
-            background-color: #333;
-            color: white;
-        }
-        h1, h2, h3 {
-            color: #004080;
-        }
-        .stButton>button {
-            background-color: #004080;
-            color: white;
-            border-radius: 5px;
-            border: none;
+    background-color: #1a1a1a;
+    color: white;
+    font-family: 'Arial', sans-serif;
+}
+.stApp {
+    background: linear-gradient(135deg, #333333 20%, #1a1a1a 80%);
+    padding: 20px;
+    border-radius: 10px;
+}
+.sidebar .sidebar-content {
+    background-color: #000000;
+    color: white;
+}
+h1, h2, h3 {
+    color: #6699cc;
+}
+.stButton>button {
+    background-color: #6699cc;
+    color: white;
+    border-radius: 5px;
+    border: none;
         }
         </style>
         """,
